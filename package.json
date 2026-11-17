@@ -1,0 +1,30 @@
+{
+  "name": "cf-workers-wbdaily1",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "WorkBuddy 每日自动签到（Cloudflare Workers + KV + Cron + MCP）",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "cloudflare": {
+    "bindings": {
+      "SETUP_TOKEN": {
+        "description": "首次初始化面板的部署令牌：建议填随机字符串（如 `openssl rand -hex 16` 生成），防止他人抢先设置管理员密码。留空则不启用该保护。"
+      },
+      "WB_KV": {
+        "description": "唯一存储：账号、密码哈希、执行记录都存在这个 KV 里，部署时会**自动创建**，无需手动操作。"
+      }
+    }
+  }
+}

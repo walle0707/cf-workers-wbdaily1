@@ -1,0 +1,29 @@
+# Cloudflare Worker 配置：单 Worker + 静态资源 + 1 个 KV Namespace + 1 条 Cron
+name = "cf-workers-wbdaily1"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+keep_vars = true
+
+# 静态前端（零构建）。not_found_handling 必须是 none：
+# 未命中文件时把请求交回 Worker，避免 POST /api/* 拿到 200 HTML。
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "none"
+
+# 唯一 KV binding。部署前把 id 换成 `wrangler kv namespace create WB_KV` 的输出。
+[[kv_namespaces]]
+binding = "WB_KV"
+id = "ab2bad5c0d794accb03831dbc080fee5" #改成你自己的KV数据库id
+
+# 每 15 分钟轮询一次（UTC）。签到时刻是**每个账号各自的属性**（北京时间整点，卡片上设置）：
+# scheduled() 只挑出「自己那一小时 == 当前北京小时」的账号，其余触发只读 1 次 accounts 就返回。
+# 某个账号的目标小时内 :00/:15/:30/:45 共 4 轮 —— 第一轮成功后写 checkin:day，后 3 轮零写短路；
+# 第一轮失败则后 3 轮自动成为重试机会。这是为了对抗 Cloudflare cron 的分钟级漂移，
+# 单点触发一旦错过就整天不签，所以不能用 "0 1 * * *"。
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+# 免费版单请求 CPU 上限 10ms，PBKDF2 迭代必须压低，否则登录会 1102。
+PBKDF2_ITERATIONS = "30000"
